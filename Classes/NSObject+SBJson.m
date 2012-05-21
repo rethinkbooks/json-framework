@@ -34,11 +34,23 @@
 @implementation NSObject (NSObject_SBJsonWriting)
 
 - (NSString *)JSONRepresentation {
-    SBJsonWriter *writer = [[SBJsonWriter alloc] init];    
-    NSString *json = [writer stringWithObject:self];
-    if (!json)
-        NSLog(@"-JSONRepresentation failed. Error is: %@", writer.error);
-    return json;
+    if (NSClassFromString(@"NSJSONSerialization")) {
+        // Faster NSJSONSerialization for iOS 5.x.
+        NSError *error = NULL;
+        NSData *data = [NSJSONSerialization dataWithJSONObject:self
+                                                       options:0
+                                                         error:&error];
+        if (!data)
+            NSLog(@"-JSONRepresentation failed. Error is: %@", error);
+        return [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+    } else {
+        // Slower SBJsonWriter for iOS 4.x.
+        SBJsonWriter *writer = [[SBJsonWriter alloc] init];
+        NSString *json = [writer stringWithObject:self];
+        if (!json)
+            NSLog(@"-JSONRepresentation failed. Error is: %@", writer.error);
+        return json;
+    }
 }
 
 @end
@@ -48,11 +60,18 @@
 @implementation NSString (NSString_SBJsonParsing)
 
 - (id)JSONValue {
-    SBJsonParser *parser = [[SBJsonParser alloc] init];
-    id repr = [parser objectWithString:self];
-    if (!repr)
-        NSLog(@"-JSONValue failed. Error is: %@", parser.error);
-    return repr;
+    if (NSClassFromString(@"NSJSONSerialization")) {
+        // Faster NSJSONSerialization for iOS 5.x.
+        NSData *data = [self dataUsingEncoding:NSUTF8StringEncoding];
+        return [data JSONValue];
+    } else {
+        // Slower SBJsonParser for iOS 4.x.
+        SBJsonParser *parser = [[SBJsonParser alloc] init];
+        id repr = [parser objectWithString:self];
+        if (!repr)
+            NSLog(@"-JSONValue failed. Error is: %@", parser.error);
+        return repr;
+    }
 }
 
 @end
@@ -62,11 +81,23 @@
 @implementation NSData (NSData_SBJsonParsing)
 
 - (id)JSONValue {
-    SBJsonParser *parser = [[SBJsonParser alloc] init];
-    id repr = [parser objectWithData:self];
-    if (!repr)
-        NSLog(@"-JSONValue failed. Error is: %@", parser.error);
-    return repr;
+    if (NSClassFromString(@"NSJSONSerialization")) {
+        // Faster NSJSONSerialization for iOS 5.x.
+        NSError *error = NULL;
+        id repr = [NSJSONSerialization JSONObjectWithData:self
+                                                  options:0
+                                                    error:&error];
+        if (!repr)
+            NSLog(@"-JSONValue failed. Error is: %@", error);
+        return repr;
+    } else {
+        // Slower SBJsonParser for iOS 4.x.
+        SBJsonParser *parser = [[SBJsonParser alloc] init];
+        id repr = [parser objectWithData:self];
+        if (!repr)
+            NSLog(@"-JSONValue failed. Error is: %@", parser.error);
+        return repr;
+    }
 }
 
 @end
