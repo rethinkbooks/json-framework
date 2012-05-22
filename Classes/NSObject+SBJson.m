@@ -34,23 +34,11 @@
 @implementation NSObject (NSObject_SBJsonWriting)
 
 - (NSString *)JSONRepresentation {
-    if (NSClassFromString(@"NSJSONSerialization")) {
-        // Faster NSJSONSerialization for iOS 5.x.
-        NSError *error = NULL;
-        NSData *data = [NSJSONSerialization dataWithJSONObject:self
-                                                       options:0
-                                                         error:&error];
-        if (!data)
-            NSLog(@"-JSONRepresentation failed. Error is: %@", error);
-        return [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
-    } else {
-        // Slower SBJsonWriter for iOS 4.x.
-        SBJsonWriter *writer = [[SBJsonWriter alloc] init];
-        NSString *json = [writer stringWithObject:self];
-        if (!json)
-            NSLog(@"-JSONRepresentation failed. Error is: %@", writer.error);
-        return json;
-    }
+    SBJsonWriter *writer = [[SBJsonWriter alloc] init];
+    NSString *json = [writer stringWithObject:self];
+    if (!json)
+        NSLog(@"-JSONRepresentation failed. Error is: %@", writer.error);
+    return json;
 }
 
 @end
